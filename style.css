@@ -1,4 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Kumar+One+Outline&family=Rubik:ital,wght@0,300;1,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kumar+One+Outline&family=Rubik:ital,wght@0,300;1,300&family=Poppins:wght@400;600&display=swap');
+:root {
+  --intro-font-family: 'Poppins', sans-serif;
+  --intro-word-duration: 0.95s;
+  --intro-word-offset: 18px;
+  --intro-word-gap: 0.45s;
+}
+
 body {
   /* Full screen width and height */
   width: 100%;
@@ -25,10 +32,69 @@ body {
   transition: transform 0.5s;
 }
 
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+
+.intro-overlay.visible {
+  opacity: 1;
+}
+
+.intro-text {
+  padding: clamp(16px, 3vw, 48px) clamp(24px, 4vw, 64px);
+  border-radius: 24px;
+  font-size: clamp(22px, 4.6vw, 56px);
+  font-weight: 600;
+  text-align: center;
+  color: #ff1f84;
+  font-family: var(--intro-font-family);
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.6);
+  text-shadow: none;
+  line-height: 1.4;
+}
+
+.intro-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(var(--intro-word-offset));
+  animation: introWordFade var(--intro-word-duration) ease forwards;
+  font-weight: 700;
+}
+
+@keyframes introWordFade {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .card-wrapper {
   perspective: 1000px;
   width: 51vw;
   height: 33vw;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.card-wrapper.card-hidden {
+  opacity: 0;
+  transform: translateY(48px) scale(0.92);
+  pointer-events: none;
+}
+
+.card-wrapper.card-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .tilt-layer {
