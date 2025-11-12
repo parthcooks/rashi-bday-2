@@ -311,6 +311,41 @@ const startConfetti = () => {
   }
 };
 
+const musicElement = document.getElementById('bg-music');
+let musicStarted = false;
+
+const tryPlayMusic = async () => {
+  if (!musicElement || musicStarted) {
+    return;
+  }
+
+  try {
+    await musicElement.play();
+    musicStarted = true;
+  } catch (err) {
+    // Autoplay might be blocked; wait for explicit interaction
+  }
+};
+
+const setupMusicAutoplay = () => {
+  if (!musicElement) {
+    return;
+  }
+
+  const resumeMusic = async () => {
+    await tryPlayMusic();
+    if (musicStarted) {
+      window.removeEventListener('touchend', resumeMusic);
+      window.removeEventListener('click', resumeMusic);
+    }
+  };
+
+  window.addEventListener('touchend', resumeMusic, { passive: true });
+  window.addEventListener('click', resumeMusic, { passive: true });
+
+  tryPlayMusic();
+};
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const introMessages = [
@@ -398,4 +433,5 @@ const playIntroSequence = async () => {
 };
 
 setupConfetti();
+setupMusicAutoplay();
 playIntroSequence();
