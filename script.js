@@ -271,30 +271,131 @@ const showCopyFeedback = () => {
   }, 2000);
 };
 
-(function() {
-    let canvas = document.getElementById('confetti-canvas'),
-            context = canvas.getContext('2d');
+let confettiGenerator;
 
-    // resize the canvas to fill browser window dynamically
-    window.addEventListener('resize', resizeCanvas, false);
+const setupConfetti = () => {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) {
+    return;
+  }
 
-    function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+  const resizeCanvas = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
 
-            /**
-             * Your drawings need to be inside this function otherwise they will be reset when 
-             * you resize the browser window and the canvas goes will be cleared.
-             */
-            drawStuff(); 
+  window.addEventListener('resize', resizeCanvas, false);
+  resizeCanvas();
+
+  const confettiSettings = {
+    target: canvas,
+    max: "128",
+    size: "1",
+    animate: true,
+    props: ["circle", "square", "triangle", "line"],
+    colors: [[255, 182, 193], [255, 192, 203], [255, 160, 200], [165, 104, 246]],
+    clock: "16",
+    rotate: true,
+    width: "",
+    height: "",
+    start_from_edge: false,
+    respawn: true
+  };
+
+  confettiGenerator = new ConfettiGenerator(confettiSettings);
+};
+
+const startConfetti = () => {
+  if (confettiGenerator && typeof confettiGenerator.render === "function") {
+    confettiGenerator.render();
+  }
+};
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const introMessages = [
+  "20 saal ki hogayi ghodi lmfao",
+  "buddhi",
+  "but ngl you're inspirational",
+  "im so proud of you",
+  "anyways"
+];
+
+const introOverlay = document.getElementById('intro-overlay');
+const introText = document.querySelector('.intro-text');
+const cardWrapper = document.querySelector('.card-wrapper');
+
+const introWordGapMs = 450;
+const introHoldMs = 1600;
+
+const renderIntroMessage = (message) => {
+  if (!introText) {
+    return [];
+  }
+
+  introText.innerHTML = '';
+  const words = message.split(/\s+/).filter(Boolean);
+
+  words.forEach((word, index) => {
+    const span = document.createElement('span');
+    span.className = 'intro-word';
+    span.textContent = word;
+    span.style.animationDelay = `${(index * introWordGapMs) / 1000}s`;
+    introText.appendChild(span);
+
+    if (index < words.length - 1) {
+      introText.append(' ');
     }
-    resizeCanvas();
+  });
 
-    function drawStuff() {
-            // do your drawing stuff here
-          let confettiSettings = {"target":canvas,"max":"128","size":"1","animate":true,"props":["circle","square","triangle","line"],"colors":[[255,182,193],[255,192,203],[255,160,200],[165,104,246]],"clock":"16","rotate":true,"width":"","height":"","start_from_edge":false,"respawn":true};
-      
-      let confetti = new ConfettiGenerator(confettiSettings);
-            confetti.render();
+  return words;
+};
+
+const showIntroMessage = async (message) => {
+  if (!introOverlay || !introText) {
+    return;
+  }
+
+  const words = renderIntroMessage(message);
+  introOverlay.classList.add('visible');
+
+  const messageDuration = words.length * introWordGapMs + introHoldMs;
+  await wait(messageDuration);
+
+  introOverlay.classList.remove('visible');
+  await wait(900);
+};
+
+const playIntroSequence = async () => {
+  if (!cardWrapper) {
+    startConfetti();
+    return;
+  }
+
+  if (introOverlay && introText) {
+    await wait(600);
+
+    for (const message of introMessages) {
+      await showIntroMessage(message);
     }
-})();
+
+    introOverlay.classList.remove('visible');
+    setTimeout(() => {
+      if (introOverlay) {
+        introOverlay.style.display = 'none';
+      }
+      if (introText) {
+        introText.innerHTML = '';
+      }
+    }, 900);
+  }
+
+  cardWrapper.classList.remove('card-hidden');
+  cardWrapper.classList.add('card-visible');
+
+  await wait(150);
+  startConfetti();
+};
+
+setupConfetti();
+playIntroSequence();
