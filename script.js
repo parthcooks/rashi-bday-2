@@ -1,0 +1,300 @@
+const tiltElements = document.querySelectorAll(".tilt-layer");
+const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+const orientationMedia = window.matchMedia("(orientation: landscape)");
+const tiltBaseOptions = {
+	max: 32,
+	speed: 1400,
+  scale: 1.04,
+  transition: true,
+  easing: "cubic-bezier(.03,.98,.52,.99)",
+  perspective: 900,
+  glare: true,
+  gyroscope: true,
+  gyroscopeMinAngleX: -18,
+  gyroscopeMaxAngleX: 18,
+  gyroscopeMinAngleY: -18,
+  gyroscopeMaxAngleY: 18,
+  gyroscopeSamples: 1
+};
+
+const portraitBounds = {
+  gyroscopeMinAngleX: -16,
+  gyroscopeMaxAngleX: 16,
+  gyroscopeMinAngleY: -16,
+  gyroscopeMaxAngleY: 16
+};
+
+const landscapeBounds = {
+  gyroscopeMinAngleX: -24,
+  gyroscopeMaxAngleX: 24,
+  gyroscopeMinAngleY: -14,
+  gyroscopeMaxAngleY: 14
+};
+
+let tiltInstances = [];
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const lerp = (start, end, t) => start + (end - start) * t;
+
+const applyOrientationBounds = (isLandscape) => {
+  const bounds = isLandscape ? landscapeBounds : portraitBounds;
+  tiltInstances.forEach((instance) => {
+    Object.assign(instance.settings, bounds);
+    instance.gyroscopeSamples = 1;
+    instance.gammazero = null;
+    instance.betazero = null;
+    instance.reset();
+    const cardEl = instance.element;
+    const cardFront = cardEl.querySelector('.card-front');
+    if (cardFront) {
+      cardFront.style.setProperty('--highlight-x', '50%');
+      cardFront.style.setProperty('--highlight-y', '40%');
+      cardFront.style.setProperty('--highlight-strength', '0.32');
+    }
+  });
+};
+
+const normalizeOrientationEvent = (event) => {
+  if (event.beta === null || event.gamma === null) {
+    return null;
+  }
+
+  const orientationAngle = (screen.orientation && typeof screen.orientation.angle === "number")
+    ? screen.orientation.angle
+    : (typeof window.orientation === "number" ? window.orientation : 0);
+
+  const amplifiedBeta = clamp(event.beta * 1.6, -90, 90);
+  const amplifiedGamma = clamp(event.gamma * 1.6, -90, 90);
+
+  if (Math.abs(orientationAngle) === 90) {
+    const sign = orientationAngle === 90 ? 1 : -1;
+    return {
+      alpha: event.alpha,
+      beta: clamp(amplifiedGamma * sign, -90, 90),
+      gamma: clamp(-amplifiedBeta * sign, -90, 90)
+    };
+  }
+
+  return {
+    alpha: event.alpha,
+    beta: amplifiedBeta,
+    gamma: amplifiedGamma
+  };
+};
+
+const handleDeviceOrientation = (event) => {
+  const normalized = normalizeOrientationEvent(event);
+  if (!normalized) {
+    return;
+  }
+  tiltInstances.forEach((instance) => {
+    instance.onDeviceOrientation(normalized);
+  });
+};
+
+const updateCardHighlight = (card, detail) => {
+  if (!detail) {
+    return;
+  }
+
+  const highlightX = clamp(lerp(20, 80, detail.percentageX / 100), 10, 90);
+  const highlightY = clamp(lerp(25, 75, detail.percentageY / 100), 15, 85);
+  const movement = (Math.abs(detail.tiltX) + Math.abs(detail.tiltY)) / (tiltBaseOptions.max * 1.5);
+  const strength = clamp(0.22 + movement, 0.24, 0.55);
+
+  card.style.setProperty('--highlight-x', `${highlightX}%`);
+  card.style.setProperty('--highlight-y', `${highlightY}%`);
+  card.style.setProperty('--highlight-strength', strength.toFixed(3));
+};
+
+const attachHighlightListeners = () => {
+  tiltInstances.forEach((instance) => {
+    const cardEl = instance.element;
+    const cardFront = cardEl.querySelector('.card-front');
+    if (!cardFront) {
+      return;
+    }
+
+    cardFront.style.setProperty('--highlight-x', '50%');
+    cardFront.style.setProperty('--highlight-y', '40%');
+    cardFront.style.setProperty('--highlight-strength', '0.32');
+
+    const handler = (event) => updateCardHighlight(cardFront, event.detail);
+    cardEl.addEventListener('tiltChange', handler);
+    instance.highlightHandler = handler;
+  });
+};
+
+const initTilt = () => {
+  VanillaTilt.init(tiltElements, tiltBaseOptions);
+  tiltInstances = Array.from(tiltElements).map((element) => element.vanillaTilt);
+
+  applyOrientationBounds(orientationMedia.matches);
+  attachHighlightListeners();
+
+  if (isCoarsePointer) {
+    tiltInstances.forEach((instance) => {
+      window.removeEventListener("deviceorientation", instance.onDeviceOrientationBind);
+    });
+    window.addEventListener("deviceorientation", handleDeviceOrientation, true);
+  }
+};
+
+const requestGyroPermission = () => {
+  const askPermission = (permissionRequestFn) => {
+    permissionRequestFn()
+      .catch(() => undefined)
+      .finally(() => {
+        window.removeEventListener('touchstart', onFirstInteraction);
+        window.removeEventListener('click', onFirstInteraction);
+      });
+  };
+
+  const onFirstInteraction = () => {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      askPermission(() => DeviceOrientationEvent.requestPermission());
+    } else if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      askPermission(() => DeviceMotionEvent.requestPermission());
+    } else {
+      window.removeEventListener('touchstart', onFirstInteraction);
+      window.removeEventListener('click', onFirstInteraction);
+    }
+  };
+
+  window.addEventListener('touchstart', onFirstInteraction, { once: true });
+  window.addEventListener('click', onFirstInteraction, { once: true });
+};
+
+if ('DeviceOrientationEvent' in window || 'DeviceMotionEvent' in window) {
+  requestGyroPermission();
+}
+
+initTilt();
+orientationMedia.addEventListener("change", (event) => {
+  applyOrientationBounds(event.matches);
+});
+
+// Card flip functionality
+const card = document.querySelector('.card');
+const giftCodeElement = document.getElementById('gift-code');
+const copyBtn = document.getElementById('copy-btn');
+
+// Replace with your actual Google Play code
+const GOOGLE_PLAY_CODE = 'XXXX-XXXX-XXXX-XXXX';
+
+// Set the code
+giftCodeElement.textContent = GOOGLE_PLAY_CODE;
+
+// Double-tap detection
+let lastTap = 0;
+let tapTimeout;
+
+const handleDoubleTap = (e) => {
+  const currentTime = new Date().getTime();
+  const tapLength = currentTime - lastTap;
+  
+  if (tapLength < 300 && tapLength > 0) {
+    e.preventDefault();
+    flipCard();
+    clearTimeout(tapTimeout);
+  } else {
+    tapTimeout = setTimeout(() => {
+      lastTap = 0;
+    }, 300);
+  }
+  
+  lastTap = currentTime;
+};
+
+// Touch events for mobile
+card.addEventListener('touchend', handleDoubleTap);
+
+// Click events for desktop (double-click)
+card.addEventListener('dblclick', (e) => {
+  e.preventDefault();
+  flipCard();
+});
+
+// Prevent single click from triggering tilt reset when waiting for double-tap
+card.addEventListener('click', (e) => {
+  if (e.detail === 1) {
+    setTimeout(() => {
+      if (e.detail === 1) {
+        // Single click - do nothing or allow tilt
+      }
+    }, 300);
+  }
+});
+
+const flipCard = () => {
+  card.classList.toggle('flipped');
+};
+
+// Copy to clipboard functionality
+copyBtn.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  
+  const codeToCopy = giftCodeElement.textContent.trim();
+  
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(codeToCopy);
+      showCopyFeedback();
+    } else {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = codeToCopy;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showCopyFeedback();
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    }
+  } catch (err) {
+    console.error('Copy failed:', err);
+  }
+});
+
+const showCopyFeedback = () => {
+  copyBtn.textContent = 'Copied!';
+  copyBtn.classList.add('copied');
+  
+  setTimeout(() => {
+    copyBtn.textContent = 'Copy Code';
+    copyBtn.classList.remove('copied');
+  }, 2000);
+};
+
+(function() {
+    let canvas = document.getElementById('confetti-canvas'),
+            context = canvas.getContext('2d');
+
+    // resize the canvas to fill browser window dynamically
+    window.addEventListener('resize', resizeCanvas, false);
+
+    function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            /**
+             * Your drawings need to be inside this function otherwise they will be reset when 
+             * you resize the browser window and the canvas goes will be cleared.
+             */
+            drawStuff(); 
+    }
+    resizeCanvas();
+
+    function drawStuff() {
+            // do your drawing stuff here
+          let confettiSettings = {"target":canvas,"max":"128","size":"1","animate":true,"props":["circle","square","triangle","line"],"colors":[[255,182,193],[255,192,203],[255,160,200],[165,104,246]],"clock":"16","rotate":true,"width":"","height":"","start_from_edge":false,"respawn":true};
+      
+      let confetti = new ConfettiGenerator(confettiSettings);
+            confetti.render();
+    }
+})();

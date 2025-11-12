@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Kumar+One+Outline&family=Rubik:ital,wght@0,300;1,300&display=swap');
+body {
+  /* Full screen width and height */
+  width: 100%;
+  min-height: 100vh;
+    
+  /* Centers the container in the middle of the screen */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  overflow: none;
+    
+  margin: 0;
+  background-color: rgb(220, 220, 220);
+  background-image: radial-gradient(#fff, #ddd);
+  
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; 
+}
+
+.container {
+  transition: transform 0.5s;
+}
+
+.card-wrapper {
+  perspective: 1000px;
+  width: 51vw;
+  height: 33vw;
+}
+
+.tilt-layer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  cursor: pointer;
+}
+
+.card.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 4vw;
+  border-radius: 0.5vw;
+  background-color: #e0f8ff;
+  background: radial-gradient(circle at 0, #e0f8ff, #eee0fb);
+  box-shadow: 0 1vw 1.5vw rgba(0, 0, 0, 0.2);
+  --highlight-x: 50%;
+  --highlight-y: 40%;
+  --highlight-strength: 0.35;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.card-front {
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.card-back {
+  justify-content: center;
+  align-items: center;
+}
+
+.card-front::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--highlight-x) var(--highlight-y),
+    rgba(255, 255, 255, var(--highlight-strength)),
+    rgba(255, 255, 255, 0) 65%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  }
+
+.card-front h1 {
+  transform: translateZ(5.2vw);
+  margin: 0 0 0 1.6vw;
+  font-size: 3vw;
+  font-weight: normal;
+  font-family: 'Kumar One Outline', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",Arial,sans-serif;
+  text-align: left;
+}
+.card-front p {
+  margin: 1vw 0 0 2vw;
+  transform: translateZ(4.6vw);
+  font-size: 2vw;
+  font-style: italic;
+  font-family: 'Rubik', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",Arial,sans-serif;
+  text-align: left;
+}
+
+.card-back h2 {
+  transform: translateZ(4vw);
+  margin: 9.5vw 0 .5vw 0;
+  font-size: 4vw;
+  font-weight: normal;
+  font-family: 'Kumar One Outline', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",Arial,sans-serif;
+  text-align: center;
+  line-height: 1.2;
+  width: 100%;
+}
+
+.code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vw;
+  margin: 2vw 0;
+  transform: translateZ(4vw);
+}
+
+.code-display {
+  font-size: 3.5vw;
+  font-weight: bold;
+  font-family: 'Rubik', monospace;
+  letter-spacing: 0.3vw;
+  padding: 1.5vw 3vw;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 0.8vw;
+  border: 0.2vw solid rgba(255,182,193, 0.4);
+  color: #333;
+  user-select: all;
+  -webkit-user-select: all;
+  cursor: text;
+  text-align: center;
+  min-width: 35vw;
+  box-shadow: 0 0.5vw 1vw rgba(0, 0, 0, 0.1);
+}
+
+.copy-btn {
+  padding: 1.2vw 3.5vw;
+  font-size: 2vw;
+  font-family: 'Rubik', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",Arial,sans-serif;
+  font-weight: 500;
+  background: linear-gradient(0deg, rgb(255,182,193), rgb(165,104,246) 50%);
+  color: white;
+  border: none;
+  border-radius: 0.6vw;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0.4vw 0.8vw rgba(165,104,246, 0.3);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.copy-btn:hover {
+  transform: translateY(-0.2vw);
+  box-shadow: 0 0.6vw 1.2vw rgba(165,104,246, 0.4);
+}
+
+.copy-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 0.2vw 0.4vw rgba(165,104,246, 0.3);
+}
+
+.copy-btn.copied {
+  background: linear-gradient(0deg, rgb(76, 175, 80), rgb(56, 142, 60));
+  box-shadow: 0 0.4vw 0.8vw rgba(76, 175, 80, 0.3);
+}
+
+.code-note {
+  transform: translateZ(3vw);
+  margin: 2.4vw 0 0;
+  font-size: 1.2vw;
+  font-style: italic;
+  font-family: 'Rubik', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",Arial,sans-serif;
+  color: rgba(0, 0, 0, 0.6);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 85%;
+}
+.inner-text {
+  background: -webkit-linear-gradient(0deg, rgb(255,182,193), rgb(165,104,246) 50%);
+  background: linear-gradient(0deg, rgb(255,182,193), rgb(165,104,246) 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 1vw rgba(255,182,193, 1);
+}
+
+#confetti-canvas {
+  position: fixed;
+  z-index: -1;
+}
+
+#party-popper {
+  position: absolute;
+  bottom: 2vw;
+  right: 2vw;
+  height: 25vw;
+  transform: translateZ(2vw);
+  fill: rgba(255,182,193, 0.5);
+  -webkit-filter: drop-shadow(0 0 1vw rgba(255,182,193, 1));
+  filter: drop-shadow(0 0 1vw rgba(255,182,193, 1));
+}
+
+@media screen and (max-width: 480px) {
+  .container {
+    transform: scale(1.5);
+  }
+}
